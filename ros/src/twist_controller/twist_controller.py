@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-import rospy
-import pid
-import lowpass
-import yaw_controller
-=======
 from yaw_controller import YawController
 from lowpass import LowPassFilter
 from math import atan
