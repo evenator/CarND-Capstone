@@ -96,6 +96,6 @@ def processVideo(input_video,output):
 
 
 if __name__ == '__main__':
-    #processVideo('loop_traffic_lights.mp4','loop_traffic_lights_out.mp4')
+    processVideo('loop_traffic_lights.mp4','loop_traffic_lights_out.mp4')
     processVideo('traffic_lights.mp4','traffic_lights_out.mp4')
 
