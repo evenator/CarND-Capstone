@@ -113,7 +113,7 @@ def main(_):
   #writer = tf.python_io.TFRecordWriter(FLAGS.output_path)
   writer = tf.python_io.TFRecordWriter("udacity_output.record")
   print("inside main")
-  path = "../object-dataset/"
+  path = "../../../object-dataset/"
   csv= path+"labels.csv"
   examples = pd.read_csv(csv,delimiter=' ')
   print(examples)
