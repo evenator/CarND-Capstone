@@ -81,7 +81,8 @@ def predict(image):
           np.squeeze(scores),
           category_index,
           use_normalized_coordinates=True,
-          line_thickness=8)
+          min_score_thresh=0.2,
+          line_thickness=4)
       return image_np
 
 
