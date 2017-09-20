@@ -16,11 +16,11 @@ FLAGS = flags.FLAGS
 
 # TO-DO replace this with label map
 def class_text_to_int(row_label):
-    if row_label == 'Red':
+    if row_label == 'red':
         return 1
     if row_label == 'RedLeft':
         return 1
-    elif row_label == 'Yellow':
+    elif row_label == 'yellow':
         return 2
     elif row_label == 'YellowLeft':
         return 2
@@ -105,12 +105,11 @@ def create_tf_example(jsondata,path):
 
 
 
-def main(_):
+def batch(writer,writer_val,path):
   i = 0
-  writer = tf.python_io.TFRecordWriter("simulator_train.record")
-  writer_val = tf.python_io.TFRecordWriter("simulator_val.record")
+  train = 0
+  val = 0
   # Set the directory you want to start from
-  path = 'green'
   rootDir = path+'/annotations'
   for dirName, subdirList, fileList in os.walk(rootDir):
     print('Found directory: %s' % dirName)
@@ -127,9 +126,24 @@ def main(_):
            # write 20% of samples to validation set
            if i % 5:
               writer_val.write(tf_example.SerializeToString())
+              val = val + 1
            else:
               writer.write(tf_example.SerializeToString())
+              train = train + 1
            i = i +1 
+  print(path)
+  print("val")
+  print(val)
+  print("train")
+  print(train)
+
+
+def main(_):
+  writer = tf.python_io.TFRecordWriter("simulator_train.record")
+  writer_val = tf.python_io.TFRecordWriter("simulator_val.record")
+  batch(writer,writer_val,'green')
+  batch(writer,writer_val,'yellow')
+  batch(writer,writer_val,'red')
   writer.close()
   writer_val.close()
 
