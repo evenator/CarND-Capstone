@@ -99,6 +99,7 @@ def predict(image,fname,folder):
       data = {}
       data['filename']=fname
       data['folder']=folder
+      data['creator']='synthetic'
       (width,height) =  image.size
       data['image_w_h']= image.size
       data['objects']=[]
