@@ -33,17 +33,17 @@ def class_text_to_int(row_label):
 
 total = 0
 
-def create_tf_example(jsondata,path):
+def create_tf_example(jsondata,path,rootDir):
   global total
-  print("create_tf_example")
+  #print("create_tf_example")
   # TODO(user): Populate the following variables from your example.
-  fname = os.path.join(path, '{}'.format(jsondata['filename']))
+  fname = os.path.join(rootDir, '{}'.format(jsondata['filename']))
   statinfo = os.stat(fname)
-  print(fname)
-  print(statinfo.st_size)
-  with tf.gfile.GFile(os.path.join(path, '{}'.format(jsondata['filename'])), 'rb') as fid:
+  #print(fname)
+  #print(statinfo.st_size)
+  with tf.gfile.GFile(os.path.join(rootDir, '{}'.format(jsondata['filename'])), 'rb') as fid:
       encoded_jpg = fid.read()
-  print(len(encoded_jpg))
+  #print(len(encoded_jpg))
   total=total+len(encoded_jpg)
   encoded_jpg_io = io.BytesIO(encoded_jpg)
   image = Image.open(encoded_jpg_io)
@@ -67,7 +67,7 @@ def create_tf_example(jsondata,path):
   classes = [] # List of integer class id of bounding box (1 per box)
 
   for row in jsondata['objects']:
-        print(row)
+        #print(row)
         xmin = row['x_y_w_h'][0]
         ymin = row['x_y_w_h'][1]
         xmax = xmin+row['x_y_w_h'][2]
@@ -110,21 +110,22 @@ def batch(writer,writer_val,path):
   train = 0
   val = 0
   # Set the directory you want to start from
-  rootDir = path+'/annotations'
+  rootDir = 'simulator_imgs/'+path+'/annotations'
   for dirName, subdirList, fileList in os.walk(rootDir):
     print('Found directory: %s' % dirName)
     for fname in fileList:
-      if fname.endswith('json'):
+      if fname.endswith('json') and not fname.startswith('.'):
          fullname = os.path.join(dirName, '{}'.format(fname))
          with open(fullname) as data_file:    
            data = json.load(data_file)
-           print('\t%s' % fname) 
-           print('\t%s' % data['objects']) 
-           print('\t%s' % data['filename']) 
+           #print('\t%s' % fname) 
+           #print('\t%s' % data['objects']) 
+           #print('\t%s' % data['filename']) 
            #print('\t%s' % data) 
-           tf_example = create_tf_example(data,path)
+           #print(path,rootDir)
+           tf_example = create_tf_example(data,path,'simulator_imgs/'+path)
            # write 20% of samples to validation set
-           if i % 5:
+           if not i % 5:
               writer_val.write(tf_example.SerializeToString())
               val = val + 1
            else:

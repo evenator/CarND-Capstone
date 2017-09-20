@@ -112,7 +112,9 @@ def predict(image,fname,folder):
                   if classes2[i] in category_index.keys():
                      class_name = changelabel(category_index[classes2[i]]['name'])
                   label = {}
-                  label['label']=class_name
+                  #label['label']=class_name
+                  # force correct label
+                  label['label']=folder
                   #print(box)
                   x = int(round(box[1]*width))
                   y = int(round(box[0]*height))
