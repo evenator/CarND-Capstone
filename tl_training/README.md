@@ -40,6 +40,7 @@ The infer directory contains a sample script to read and write a movie with the 
 
 ```
 tl_infer.py - opens the two movies, and writes two new ones using the frozen graph
+simulator_infer.py - this looks in data/simulator_imgs and runs inference on them and generates json and image files
 loop_traffic_lights.mp4
 traffic_lights.mp4
 ```
