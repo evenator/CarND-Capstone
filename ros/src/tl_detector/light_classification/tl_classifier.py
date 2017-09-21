@@ -88,10 +88,7 @@ class TLClassifier(object):
 
         # this threshold may want to be 0.2 ??
         min_score_thresh=0.4
-        data = {}
         (width,height) =  image.size
-        #data['image_w_h']= image.size
-        data['objects']=[]
 
         scores2=np.squeeze(scores)
         boxes2=np.squeeze(boxes)
@@ -107,21 +104,21 @@ class TLClassifier(object):
                 box = tuple(boxes2[i].tolist())
                 if classes2[i] in category_index.keys():
                     class_name = self.changelabel(category_index[classes2[i]]['name'])
-                label = {}
-                label['label']=class_name
+                print("traffic light:")
+                #label = {}
+                #label['label']=class_name
 
                 x = int(round(box[1]*width))
                 y = int(round(box[0]*height))
                 x2 = int(round(box[3]*width))
                 y2 = int(round(box[2]*height))
-                label['x_y_w_h']= (x,y,(x2-x),(y2-y))
-                data['objects'].append(label)
+                print((class_name,x,y,x2,y2))
 
-                if label['label'] == 'green':
+                if class_name == 'green':
                     green_count += 1
-                elif label['label'] == 'red':
+                elif class_name == 'red':
                     red_count += 1
-                elif label['label'] == 'yellow':
+                elif class_name == 'yellow':
                     yellow_count += 1
 
         tl = [red_count, yellow_count, green_count]
