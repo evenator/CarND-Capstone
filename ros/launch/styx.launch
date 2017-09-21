@@ -16,8 +16,13 @@
     <include file="$(find waypoint_updater)/launch/waypoint_updater.launch"/>
 
     <!--Traffic Light Detector Node -->
-    <!-- <include file="$(find tl_detector)/launch/tl_detector.launch"/> -->
+    <include file="$(find tl_detector)/launch/tl_detector.launch"/>
 
     <!--Traffic Light Locations and Camera Config -->
-    <!-- <param name="traffic_light_config" textfile="$(find tl_detector)/sim_traffic_light_config.yaml" /> -->
+    <param name="traffic_light_config" textfile="$(find tl_detector)/sim_traffic_light_config.yaml"/>
+
+    <!--Traffic Light frozen tensorflow graph file -->
+    <!-- <param name="tl_inference_graph" textfile="$(find tl_detector)/light_classification/frozen_inference_graph.pb"/> -->
+    <param name="tl_inference_graph" value="$(find tl_detector)/light_classification/frozen_inference_graph.pb"/>
+
 </launch>
