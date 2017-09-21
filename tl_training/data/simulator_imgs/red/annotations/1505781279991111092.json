@@ -1,6 +1,6 @@
 {
   "filename" : "1505781279991111092.jpg",
-  "folder" : "redout",
+  "folder" : "redoutfaster_rcnn",
   "image_w_h" : [
     800,
     600
@@ -19,9 +19,9 @@
       "label" : "red",
       "x_y_w_h" : [
         375,
-        302,
-        53,
-        112
+        293,
+        59,
+        121
       ]
     },
     {

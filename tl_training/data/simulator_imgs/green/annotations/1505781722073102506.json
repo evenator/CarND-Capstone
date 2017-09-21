@@ -1,6 +1,6 @@
 {
   "filename" : "1505781722073102506.jpg",
-  "folder" : "greenout",
+  "folder" : "greenoutfaster_rcnn",
   "image_w_h" : [
     800,
     600
@@ -27,10 +27,10 @@
     {
       "label" : "green",
       "x_y_w_h" : [
-        453,
-        508,
+        456,
+        505,
         23,
-        46
+        49
       ]
     }
   ]
