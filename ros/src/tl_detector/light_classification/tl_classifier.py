@@ -20,7 +20,9 @@ from PIL import Image
 import cv2
 
 
-PATH_TO_CKPT = "../../../../tl_training/train/tl_inferencesimulator/frozen_inference_graph.pb"
+PATH_TO_CKPT = rospy.get_param("/tl_inference_graph")
+
+#PATH_TO_CKPT = "../../../../tl_training/train/tl_inferencesimulator/frozen_inference_graph.pb"
 #PATH_TO_CKPT = "./frozen_inference_graph.pb"
 NUM_CLASSES = 3
 
@@ -56,6 +58,7 @@ class TLClassifier(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
+        print("get_classifictation called with image")
         category_index = {1: {'id': 1, 'name': u'traffic_light_red'},
                   2: {'id': 2, 'name': u'traffic_light_yellow'},
                   3: {'id': 3, 'name': u'traffic_light_green'}}
