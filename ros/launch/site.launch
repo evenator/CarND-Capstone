@@ -21,6 +21,9 @@
     <!--Camera Calibration YAML -->
     <param name="grasshopper_calibration_yaml" textfile="$(find styx)../../../data/grasshopper_calibration.yml" />
 
+    <!--Traffic Light frozen tensorflow graph file -->
+    <param name="tl_inference_graph" value="$(find tl_detector)/light_classification/tl_inferencecarla/frozen_inference_graph.pb"/>
+
     <!--Camera Info Publisher -->
     <include file="$(find camera_info_publisher)/launch/camera_info_publisher.launch"/>
 </launch>
