@@ -22,6 +22,6 @@
     <param name="traffic_light_config" textfile="$(find tl_detector)/sim_traffic_light_config.yaml"/>
 
     <!--Traffic Light frozen tensorflow graph file -->
-    <param name="tl_inference_graph" value="$(find tl_detector)/light_classification/tl_inferencesimulator/frozen_inference_graph.pb"/>
+    <param name="tl_inference_graph" value="$(find tl_detector)/simulator_frozen_inference_graph.pb"/>
 
 </launch>

@@ -58,7 +58,7 @@ class TLClassifier(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
-        print("get_classifictation called with image")
+        rospy.loginfo("get_classifictation called with image")
         category_index = {1: {'id': 1, 'name': u'traffic_light_red'},
                   2: {'id': 2, 'name': u'traffic_light_yellow'},
                   3: {'id': 3, 'name': u'traffic_light_green'}}
@@ -91,7 +91,7 @@ class TLClassifier(object):
 
         # this threshold may want to be 0.2 ??
         min_score_thresh=0.4
-        (width,height) =  image.size
+        width, height, channels =  image.shape
 
         scores2=np.squeeze(scores)
         boxes2=np.squeeze(boxes)
@@ -107,7 +107,6 @@ class TLClassifier(object):
                 box = tuple(boxes2[i].tolist())
                 if classes2[i] in category_index.keys():
                     class_name = self.changelabel(category_index[classes2[i]]['name'])
-                print("traffic light:")
                 #label = {}
                 #label['label']=class_name
 
@@ -115,7 +114,7 @@ class TLClassifier(object):
                 y = int(round(box[0]*height))
                 x2 = int(round(box[3]*width))
                 y2 = int(round(box[2]*height))
-                print((class_name,x,y,x2,y2))
+                rospy.loginfo("traffic light: "+str((class_name,x,y,x2,y2)))
 
                 if class_name == 'green':
                     green_count += 1
