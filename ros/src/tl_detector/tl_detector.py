@@ -10,6 +10,8 @@ from light_classification.tl_classifier import TLClassifier
 import tf
 import cv2
 import yaml
+from scipy.spatial import cKDTree
+import numpy as np
 
 STATE_COUNT_THRESHOLD = 3
 
@@ -48,6 +50,12 @@ class TLDetector(object):
         self.last_state = TrafficLight.UNKNOWN
         self.last_wp = -1
         self.state_count = 0
+        self.light_closest_waypoints = None
+
+        self.wp_tree = None
+        self.light_wps = None
+
+        self.light_tree = cKDTree(self.config['light_positions'])
 
         rospy.spin()
 
@@ -56,6 +64,10 @@ class TLDetector(object):
 
     def waypoints_cb(self, waypoints):
         self.waypoints = waypoints
+        # Set up a KD tree of waypoints. Only need to do this once
+        if self.wp_tree is None:
+            xy_points = [(p.pose.pose.position.x, p.pose.pose.position.y) for p in waypoints.waypoints]
+            self.wp_tree = cKDTree(xy_points)
 
     def traffic_cb(self, msg):
         self.lights = msg.lights
@@ -100,7 +112,8 @@ class TLDetector(object):
             int: index of the closest waypoint in self.waypoints
 
         """
-        #TODO implement
+        if self.wp_tree is not None:
+            return self.wp_tree.query((pose.position.x, pose.position.y), k=1)[1]
         return 0
 
 
@@ -163,6 +176,30 @@ class TLDetector(object):
         #Get classification
         return self.light_classifier.get_classification(cv_image)
 
+    def find_closest_light(self, car_position):
+        light_positions = self.config['light_positions']
+        # Set up a list of light waypoints. Only need to do this once
+        if self.light_wps is None:
+            self.light_wps = self.wp_tree.query(light_positions, 1)[1]
+            self.light_wps_sort_indexes = np.argsort(self.light_wps)
+            rospy.loginfo("Built light waypoints list")
+
+        try:
+            # This next line is hideous, but it finds the waypoint index corresponding to the next
+            # waypoint
+            next_light_index = self.light_wps_sort_indexes[np.searchsorted(
+                                                            self.light_wps,
+                                                            car_position,
+                                                            sorter=self.light_wps_sort_indexes)]
+            light_wp = self.light_wps[next_light_index]
+        except IndexError:
+            # IndexError indicates that the next light is past the end of the lap, so just use the
+            # first light
+            next_light_index = self.light_wps_sort_indexes[0]
+            light_wp = self.light_wps[next_light_index]
+        rospy.loginfo("Next light index: %d Next light waypoint: %d", next_light_index, light_wp)
+        return next_light_index, light_wp
+
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists, and determines its
             location and color
@@ -172,18 +209,30 @@ class TLDetector(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
+        light_wp = -1
+        state = TrafficLight.UNKNOWN
         light = None
-        light_positions = self.config['light_positions']
         if(self.pose):
             car_position = self.get_closest_waypoint(self.pose.pose)
+        else:
+            rospy.logwarn("Still waiting for current pose.")
+            return light_wp, state
 
-        #TODO find the closest visible traffic light (if one exists)
+        if self.wp_tree is None:
+            # We don't have waypoints yet, so can't do the query
+            rospy.logwarn("Still waiting for waypoints.")
+            return light_wp, state
+
+        next_light_index, light_wp = self.find_closest_light(car_position)
+
+        # TODO: Add a max range and/or enforce that light is in FOV
+        if len(self.lights):
+            light = self.lights[next_light_index]
 
         if light:
             state = self.get_light_state(light)
-            return light_wp, state
-        self.waypoints = None
-        return -1, TrafficLight.UNKNOWN
+
+        return light_wp, state
 
 if __name__ == '__main__':
     try:
