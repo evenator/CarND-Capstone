@@ -29,6 +29,7 @@ NUM_CLASSES = 3
 
 class TLClassifier(object):
     def __init__(self):
+        self.sess = None
         self.detection_graph = tf.Graph()
         with self.detection_graph.as_default():
           self.od_graph_def = tf.GraphDef()
@@ -36,6 +37,18 @@ class TLClassifier(object):
             self.serialized_graph = fid.read()
             self.od_graph_def.ParseFromString(self.serialized_graph)
             tf.import_graph_def(self.od_graph_def, name='')
+        with self.detection_graph.as_default():
+            self.sess=tf.Session(graph=self.detection_graph)
+            # Definite input and output Tensors for detection_graph
+            self.image_tensor = self.detection_graph.get_tensor_by_name('image_tensor:0')
+            # Each box represents a part of the image where a particular object was detected.
+            self.detection_boxes = self.detection_graph.get_tensor_by_name('detection_boxes:0')
+            # Each score represent how level of confidence for each of the objects.
+            # Score is shown on the result image, together with the class label.
+            self.detection_scores = self.detection_graph.get_tensor_by_name('detection_scores:0')
+            self.detection_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
+            self.num_detections = self.detection_graph.get_tensor_by_name('num_detections:0')
+
         pass
 
     def changelabel(self,label):
@@ -64,20 +77,7 @@ class TLClassifier(object):
                   3: {'id': 3, 'name': u'traffic_light_green'}}
 
 
-        sess = None
         light = ['red','yellow','green']
-
-        with self.detection_graph.as_default():
-            sess=tf.Session(graph=self.detection_graph)
-            # Definite input and output Tensors for detection_graph
-            image_tensor = self.detection_graph.get_tensor_by_name('image_tensor:0')
-            # Each box represents a part of the image where a particular object was detected.
-            detection_boxes = self.detection_graph.get_tensor_by_name('detection_boxes:0')
-            # Each score represent how level of confidence for each of the objects.
-            # Score is shown on the result image, together with the class label.
-            detection_scores = self.detection_graph.get_tensor_by_name('detection_scores:0')
-            detection_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
-            num_detections = self.detection_graph.get_tensor_by_name('num_detections:0')
 
         # we trained the network with RGB images
         image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
@@ -85,13 +85,14 @@ class TLClassifier(object):
         # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
         image_np_expanded = np.expand_dims(image_np, axis=0)
         # Actual detection.
-        (boxes, scores, classes, num) = sess.run(
-            [detection_boxes, detection_scores, detection_classes, num_detections],
-            feed_dict={image_tensor: image_np_expanded})
+        (boxes, scores, classes, num) = self.sess.run(
+            [self.detection_boxes, self.detection_scores, self.detection_classes, self.num_detections],
+            feed_dict={self.image_tensor: image_np_expanded})
 
         # this threshold may want to be 0.2 ??
         min_score_thresh=0.4
         width, height, channels =  image.shape
+        #rospy.loginfo("w,h.c: "+str((width,height,channels)))
 
         scores2=np.squeeze(scores)
         boxes2=np.squeeze(boxes)
@@ -101,6 +102,7 @@ class TLClassifier(object):
         red_count = 0
         yellow_count = 0
         class_name = None
+        #rospy.loginfo("about to look through boxes: "+str((scores2,boxes2)))
 
         for i in range(boxes2.shape[0]):
             if scores2 is None or scores2[i] > min_score_thresh:
@@ -125,6 +127,7 @@ class TLClassifier(object):
 
         tl = [red_count, yellow_count, green_count]
         lightcode = [TrafficLight.RED,TrafficLight.YELLOW,TrafficLight.GREEN]
+        rospy.loginfo("answer: "+str(tl.index(max(tl))))
         return lightcode[tl.index(max(tl))]
 
 
