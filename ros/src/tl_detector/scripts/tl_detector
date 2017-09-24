@@ -43,9 +43,6 @@ class TLDetector(object):
         self.wp_tree = None
         self.light_wps = None
 
-        self.light_tree = cKDTree(self.config['light_positions'])
-        rospy.loginfo("Built KD tree of traffic light positions")
-
         self.pose_sub = rospy.Subscriber('current_pose', PoseStamped, self.pose_cb)
         self.wp_sub = rospy.Subscriber('base_waypoints', Lane, self.waypoints_cb)
         self.light_sub = rospy.Subscriber('traffic_lights', TrafficLightArray, self.traffic_cb)
@@ -61,6 +58,7 @@ class TLDetector(object):
             xy_points = [(p.pose.pose.position.x, p.pose.pose.position.y)
                          for p in waypoints.waypoints]
             self.wp_tree = cKDTree(xy_points)
+            rospy.loginfo("Built KD tree of waypoints")
 
     def traffic_cb(self, msg):
         self.lights = msg.lights
@@ -132,7 +130,7 @@ class TLDetector(object):
         return self.light_classifier.get_classification(cv_image)
 
     def find_closest_light(self, car_position):
-        light_positions = self.config['light_positions']
+        light_positions = self.config['stop_line_positions']
         # Set up a list of light waypoints. Only need to do this once
         if self.light_wps is None:
             self.light_wps = self.wp_tree.query(light_positions, 1)[1]
