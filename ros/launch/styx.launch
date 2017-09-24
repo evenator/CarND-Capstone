@@ -23,5 +23,4 @@
 
     <!--Traffic Light frozen tensorflow graph file -->
     <param name="tl_inference_graph" value="$(find tl_detector)/simulator_frozen_inference_graph.pb"/>
-
 </launch>
