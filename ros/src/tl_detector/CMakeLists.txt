@@ -8,8 +8,8 @@ catkin_python_setup()
 catkin_package()
 
 catkin_install_python(PROGRAMS
-        scripts/light_publisher.py
-        scripts/tl_detector.py
+        scripts/light_publisher
+        scripts/tl_detector
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
