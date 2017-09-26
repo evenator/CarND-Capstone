@@ -14,7 +14,6 @@ import math
 class TLPublisher(object):
     def __init__(self):
         rospy.init_node('tl_publisher')
-
         self.traffic_light_pubs = rospy.Publisher('/vehicle/traffic_lights', TrafficLightArray, queue_size=1)
 
         light = self.create_light(20.991, 22.837, 1.524, 0.08, 3)

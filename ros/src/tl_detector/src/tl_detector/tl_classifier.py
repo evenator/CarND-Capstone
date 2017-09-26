@@ -10,6 +10,11 @@ import rospy
 from styx_msgs.msg import TrafficLight
 import sys
 import tensorflow as tf
+import sensor_msgs.msg
+from utils import visualization_utils as vis_util
+from cv_bridge import CvBridge
+
+
 
 NUM_CLASSES = 3
 
@@ -24,15 +29,18 @@ class TLClassifier(object):
     Uses a TensorFlow classifier to determine the state of a traffic light.
     """
 
-    def __init__(self, path_to_ckpt, min_score_thresh=0.4):
+    def __init__(self, path_to_ckpt, min_score_thresh=0.6):
         """
         Constructor.
 
         path_to_ckpt - Full path to the protobuff definition of the graph.
         min_score_thresh - Minimum ratio of boxes of one detection in order to accept it.
         """
+        self.bridge = CvBridge()
+
         self.min_score_thresh = min_score_thresh
         self.detection_graph = tf.Graph()
+        print(path_to_ckpt)
         with self.detection_graph.as_default():
             od_graph_def = tf.GraphDef()
             with tf.gfile.GFile(path_to_ckpt, 'rb') as fid:
@@ -55,6 +63,11 @@ class TLClassifier(object):
                                    detection_classes,
                                    num_detections]
 
+
+            # publish images
+            self.image_pub = rospy.Publisher("/image_color_annotated",sensor_msgs.msg.Image,queue_size=5)
+
+
     def get_classification(self, image):
         """
         Determine the color of the traffic light in the image.
@@ -66,12 +79,24 @@ class TLClassifier(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
-        category_index = {1: {'id': 1, 'name': u'traffic_light_red'},
-                          2: {'id': 2, 'name': u'traffic_light_yellow'},
-                          3: {'id': 3, 'name': u'traffic_light_green'}}
+        category_index = {1: {'id': 1, 'name': u'traffic_light_green'},
+                          2: {'id': 2, 'name': u'traffic_light_red'},
+                          3: {'id': 3, 'name': u'traffic_light_green'},
+                          4: {'id': 4, 'name': u'traffic_light_green'},
+                          5: {'id': 5, 'name': u'traffic_light_red'},
+                          6: {'id': 6, 'name': u'traffic_light_red'},
+                          7: {'id': 7, 'name': u'traffic_light_yellow'},
+                          8: {'id': 8, 'name': u'traffic_light_yellow'},
+                          9: {'id': 9, 'name': u'traffic_light_red'},
+                          10: {'id': 10, 'name': u'traffic_light_green'},
+                          11: {'id': 11, 'name': u'traffic_light_green'},
+                          12: {'id': 12, 'name': u'traffic_light_green'},
+                          13: {'id': 13, 'name': u'traffic_light_red'},
+                          14: {'id': 14, 'name': u'traffic_light_red'}}
+
 
         # we trained the network with RGB images
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image_np = np.array(image)
         # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
         image_np_expanded = np.expand_dims(image_np, axis=0)
@@ -112,6 +137,23 @@ class TLClassifier(object):
         tl = [red_count, yellow_count, green_count]
         max_tl = np.argmax(tl)
         rospy.loginfo("get_classification answer: %d", max_tl)
+
+        
+        vis_util.visualize_boxes_and_labels_on_image_array(
+          image_np,
+          np.squeeze(boxes),
+          np.squeeze(classes).astype(np.int32),
+          np.squeeze(scores),
+          category_index,
+          use_normalized_coordinates=True,
+          min_score_thresh=self.min_score_thresh,
+          line_thickness=4)
+        
+        
+        #img = self.bridge.cv2_to_imgmsg(image_np, "bgr8")
+        img = self.bridge.cv2_to_imgmsg(image_np, "rgb8")
+        self.image_pub.publish(img)
+
         return LIGHT_CODES[max_tl]
 
 

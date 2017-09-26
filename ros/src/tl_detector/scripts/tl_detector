@@ -74,6 +74,7 @@ class TLDetector(object):
             msg (Image): image from car-mounted camera
 
         """
+        rospy.loginfo("Entering image callback")
         self.has_image = True
         self.camera_image = msg
         light_wp, state = self.process_traffic_lights()
@@ -181,7 +182,7 @@ class TLDetector(object):
         # TODO: Add a max range and/or enforce that light is in FOV
         if len(self.lights):
             light = self.lights[next_light_index]
-
+        print("Nitin: light is: ",light)
         if light:
             state = self.get_light_state(light)
             if not (light.state == TrafficLight.UNKNOWN or light.state == state):
