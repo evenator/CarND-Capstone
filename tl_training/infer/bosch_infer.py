@@ -22,10 +22,8 @@ from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 
 
-#PATH_TO_CKPT = "../train/tl_inferencesimulator/frozen_inference_graph.pb"
-PATH_TO_CKPT = "../train/tl_inferencesimulator_faster_r-cnn/frozen_inference_graph.pb"
-#PATH_TO_CKPT = "/home/nisn/frozen_inference_graph.pb"
-PATH_TO_LABELS = "/home/nisn/bosch/label_map.pbtxt"
+PATH_TO_CKPT = "../train/tl_inferenceBOSCH_faster_r/frozen_inference_graph.pb"
+PATH_TO_LABELS = "../data/bosch_output.pbtxt"
 NUM_CLASSES = 14
 IMAGE_SIZE = (12, 8)
 
