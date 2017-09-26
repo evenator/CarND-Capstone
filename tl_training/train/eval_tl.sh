@@ -1,3 +1,4 @@
+echo "This doesn't work well"
 #rm -rf ./NITIN_Evaluation/
 #mkdir NITIN_Evaluation
 #python $OBJECTDETECTION/models/object_detection/eval.py --logtostderr --pipeline_config_path=./ssd_inception_v2_coco_udacity_traffic_NITIN.config --checkpoint_dir=./NITIN_Checkpoint/ --eval_dir=./NITIN_Evaluation/
