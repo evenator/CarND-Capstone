@@ -38,9 +38,25 @@ def load_image_into_numpy_array(image):
       (im_height, im_width, 3)).astype(np.uint8)
 
 
-label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
-categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
-category_index = label_map_util.create_category_index(categories)
+#label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
+#categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
+#category_index = label_map_util.create_category_index(categories)
+
+category_index = {1: {'id': 1, 'name': u'traffic_light_green'},
+                  2: {'id': 2, 'name': u'traffic_light_red'},
+                  3: {'id': 3, 'name': u'traffic_light_green'},
+                  4: {'id': 4, 'name': u'traffic_light_green'},
+                  5: {'id': 5, 'name': u'traffic_light_red'},
+                  6: {'id': 6, 'name': u'traffic_light_red'},
+                  7: {'id': 7, 'name': u'traffic_light_yellow'},
+                  8: {'id': 8, 'name': u'traffic_light_yellow'},
+                  9: {'id': 9, 'name': u'traffic_light_red'},
+                  10: {'id': 10, 'name': u'traffic_light_green'},
+                  11: {'id': 11, 'name': u'traffic_light_green'},
+                  12: {'id': 12, 'name': u'traffic_light_green'},
+                  13: {'id': 13, 'name': u'traffic_light_red'},
+                  14: {'id': 14, 'name': u'traffic_light_red'}}
+
 
 
 sess = None
@@ -81,7 +97,7 @@ def predict(image):
           np.squeeze(scores),
           category_index,
           use_normalized_coordinates=True,
-          min_score_thresh=0.7,
+          min_score_thresh=0.6,
           line_thickness=4)
       return image_np
 
