@@ -23,9 +23,12 @@ from object_detection.utils import visualization_utils as vis_util
 
 
 PATH_TO_CKPT = "../train/tl_inferencesimulator_faster_r-cnn/frozen_inference_graph.pb"
-PATH_TO_LABELS = "../data/output.pbtxt"
-NUM_CLASSES = 3
-IMAGE_SIZE = (12, 8)
+#PATH_TO_CKPT = "/home/nisn/frozen_inference_graph.pb"
+#PATH_TO_LABELS = "../data/output.pbtxt"
+#PATH_TO_LABELS = "../data/bosch_output.pbtxt"
+#NUM_CLASSES = 3
+#NUM_CLASSES = 14
+#IMAGE_SIZE = (12, 8)
 
 
 detection_graph = tf.Graph()
@@ -40,7 +43,6 @@ def load_image_into_numpy_array(image):
   (im_width, im_height) = image.size
   return np.array(image.getdata()).reshape(
       (im_height, im_width, 3)).astype(np.uint8)
-
 
 #label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
 #categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
@@ -61,7 +63,11 @@ category_index = {1: {'id': 1, 'name': u'traffic_light_green'},
                   13: {'id': 13, 'name': u'traffic_light_red'},
                   14: {'id': 14, 'name': u'traffic_light_red'}}
 
-
+"""
+category_index = {1: {'id': 1, 'name': u'traffic_light_red'},
+                  2: {'id': 2, 'name': u'traffic_light_yellow'},
+                  3: {'id': 3, 'name': u'traffic_light_green'}}
+"""
 sess = None
 
 with detection_graph.as_default():
@@ -128,11 +134,12 @@ def predict(image,fname,folder):
                   box = tuple(boxes2[i].tolist())
                   #print(classes2[i])
                   if classes2[i] in category_index.keys():
+                     print(classes2[i])
                      class_name = changelabel(category_index[classes2[i]]['name'])
                   label = {}
-                  #label['label']=class_name
+                  label['label']=class_name
                   # force correct label
-                  label['label']=folder
+                  #label['label']=folder
                   #print(box)
                   x = int(round(box[1]*width))
                   y = int(round(box[0]*height))
@@ -191,6 +198,6 @@ def processDir(color):
                   outfile.close()
 
 if __name__ == '__main__':
-   processDir('green')
-   processDir('yellow')
-   processDir('red')
+   processDir('IMG')
+   #processDir('yellow')
+   #processDir('green')
