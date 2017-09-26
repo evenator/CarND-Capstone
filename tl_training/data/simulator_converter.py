@@ -17,15 +17,15 @@ FLAGS = flags.FLAGS
 # TO-DO replace this with label map
 def class_text_to_int(row_label):
     if row_label == 'red':
-        return 1
+        return 2
     if row_label == 'RedLeft':
-        return 1
+        return 5
     elif row_label == 'yellow':
-        return 2
+        return 7
     elif row_label == 'YellowLeft':
-        return 2
+        return 7
     elif row_label == 'green':
-        return 3
+        return 1
     elif row_label == 'GreenLeft':
         return 3
     else:
@@ -125,13 +125,13 @@ def batch(writer,writer_val,path):
            #print(path,rootDir)
            tf_example = create_tf_example(data,path,'simulator_imgs/'+path)
            # write 20% of samples to validation set
-           if not i % 5:
-              writer_val.write(tf_example.SerializeToString())
-              val = val + 1
-           else:
-              writer.write(tf_example.SerializeToString())
-              train = train + 1
-           i = i +1 
+           #if not i % 5:
+           #writer_val.write(tf_example.SerializeToString())
+           #val = val + 1
+           #else:
+           writer.write(tf_example.SerializeToString())
+           train = train + 1
+           #i = i +1 
   print(path)
   print("val")
   print(val)

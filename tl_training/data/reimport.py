@@ -16,16 +16,33 @@ flags.DEFINE_string('output_path', '', 'Path to output TFRecord')
 FLAGS = flags.FLAGS
 
 # TO-DO replace this with label map
+
 def class_text_to_int(row_label):
     if row_label == 'traffic_light_red':
-        return 1
-    elif row_label == 'traffic_light_yellow':
         return 2
+    elif row_label == 'traffic_light_yellow':
+        return 7
     elif row_label == 'traffic_light_green':
+        return 1
+    else:
+        None
+"""
+def class_text_to_int(row_label):
+    if row_label == 'red':
+        return 2
+    if row_label == 'RedLeft':
+        return 5
+    elif row_label == 'yellow':
+        return 7
+    elif row_label == 'YellowLeft':
+        return 7
+    elif row_label == 'green':
+        return 1
+    elif row_label == 'GreenLeft':
         return 3
     else:
         None
-
+"""
 
 def create_tf_example(group,path,prefix):
   print("create_tf_example")
@@ -122,7 +139,7 @@ def processFile(prefix):
 
 def main(_):
   processFile('train')
-  processFile('val')
+  #processFile('val')
 
 
 
