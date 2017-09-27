@@ -15,6 +15,7 @@ as well as to verify your TL classifier.
 from geometry_msgs.msg import PoseStamped
 import math
 import rospy
+from std_msgs.msg import Int32
 from styx_msgs.msg import Lane, Waypoint, TrafficLight, TrafficLightArray
 
 
@@ -57,26 +58,28 @@ class WaypointUpdater(object):
         - Advertises to final_waypoints
         - Sets up class variables
         """
-        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
-        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        self.pose_sub = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
+        self.base_wp_sub = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        self.traffic_lights_sub = rospy.Subscriber('/vehicle/traffic_lights',
+                                                   TrafficLightArray,
+                                                   self.gt_traffic_cb)
+        self.traffic_wp_sub = rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
 
-        rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.gt_traffic_cb)
         self.lookahead_wps = rospy.get_param('~lookahead_wps', 200)
         self.max_decel = abs(rospy.get_param('~max_deceleration', 1.0))
-
-        # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
+        self.use_ground_truth = rospy.get_param('~use_ground_truth', False)
+        self.dist_threshold = rospy.get_param('~dist_threshold', 2.0)
+        self.stopping_dist = rospy.get_param('~stopping_dist', 4.0)
+        self.nb_stopping_wp = rospy.get_param('~nb_stopping_wp', 0)
+        self.cruise_velocity = rospy.get_param('~cruise_velocity', 4.47)
+        self.update_period = rospy.Duration(rospy.get_param('~update_period', 0.2))
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
-        self.next_traffic = TrafficLight()
-        self.valid_next_traffic = False
-        self.dist_threshold = 2.
+
         self.lane = Lane()
         self.last_lane = Lane()
 
-        # ADJUST THIS TO ZERO WHEN INTEGRATING WITH TL_DETECTOR
-        self.nb_stopping_wp = 30
-
-        self.traffic_lights = TrafficLightArray()
+        self.traffic_lights = None
 
         self.state = WaypointUpdater.ACCELERATING
 
@@ -84,15 +87,17 @@ class WaypointUpdater(object):
 
         self.commanded_velocity = 0
 
-        self.cruise_velocity = 4.47 
-
         self.currpose = None
         self.curr_waypoints = None
+        self.start_idx = 0
 
-        self.last_time = None
-        self.period = 0.2
+        self.last_time = rospy.Time(0)
 
-
+    def get_state_string(self):
+        return {WaypointUpdater.RUNNING: "Running",
+                WaypointUpdater.STOPPING: "Stopping",
+                WaypointUpdater.STOPPED: "Stopped",
+                WaypointUpdater.ACCELERATING: "Accelerating"}[self.state]
 
     def pose_cb(self, msg):
         """Callback for the curr_pose just stores it for later use."""
@@ -101,27 +106,20 @@ class WaypointUpdater(object):
 
     def waypoints_cb(self, lanemsg):
         """
-        Callback for base_waypoints finds the waypoint.
+        Callback for base_waypoints.
 
         Finds the waypoint closes to the current pose, then publishes the next lookahead_wps
         waypoints after that one to final_waypoints.
         """
-        # if self.currpose is None:
-            # return
-
-        print("waypoints_cb")
-
         self.curr_waypoints = lanemsg.waypoints
        
     def update_lane(self):
-
         if self.curr_waypoints is None:
             return
 
-        now = rospy.get_time()
-        if(self.last_time is not None):
-            if(now - self.last_time < self.period):
-                return
+        now = rospy.Time.now()
+        if (now - self.last_time) < self.update_period:
+            return
 
         self.last_time = now
 
@@ -131,7 +129,6 @@ class WaypointUpdater(object):
         mindist = 1000000
         start_idx = 0
 
-        print("currpose: ", self.currpose)
         for i in range(len(self.curr_waypoints)):
             a = self.curr_waypoints[i].pose.pose.position
             b = self.currpose
@@ -143,7 +140,6 @@ class WaypointUpdater(object):
             if start_idx == (len(self.curr_waypoints) - 1):
                 start_idx = 0
 
-        print("start_idx: ", start_idx)
         idx = 0
         reset = 0
         # Collecting the waypoints ahead of the car.
@@ -151,70 +147,72 @@ class WaypointUpdater(object):
         for i in range(self.lookahead_wps):
             idx = (start_idx + i) % len(self.curr_waypoints)
             self.lane.waypoints.append(self.curr_waypoints[idx])
+        rospy.loginfo("Current waypoint: %d", start_idx)
 
-        print(self.lane.waypoints[0].pose.pose.position)
-
-        index = -1
-        # Check if there is a traffic light on the lookahead path
-        self.valid_next_traffic = False
-        for i in range(len(self.traffic_lights.lights)):
-            index = self.closest_index(self.traffic_lights.lights[i])
-            if(index >= self.nb_stopping_wp-5):
-                self.next_traffic = self.traffic_lights.lights[i]
-                self.valid_next_traffic = True
-                break
-        self.traffic_light_wp_index = index
+        
+        if self.use_ground_truth:
+            self.get_traffic_from_gt()
 
         self.step()
 
-        print(self.lane.waypoints[0].pose.pose.position)
-
-       
         self.last_pose = self.currpose
         self.last_lane = self.lane
+        self.start_idx = start_idx
         self.final_waypoints_pub.publish(self.lane)
 
-
+    def get_traffic_from_gt(self):
+        self.traffic_light_wp_index = -1
+        # Check if there is a traffic light on the lookahead path
+        for light in self.traffic_lights:
+            index = self.closest_index(light)
+            if index >= self.nb_stopping_wp-5:
+                self.traffic_light_wp_index = index
+                return
 
     def step(self):
-        # print(self.state)
-        # print("x: ", self.currpose.x)
-        # self.state=self.RUNNING
-
         if(len(self.last_lane.waypoints)>0):
             self.lane = self.keep_last(self.lane, self.last_lane)
             self.commanded_velocity = get_waypoint_velocity(self.lane.waypoints[0])
         else:
             self.lane = self.keep_speed(self.lane, self.cruise_velocity)
             self.commanded_velocity = self.cruise_velocity
-        
+
+        stop_index = self.traffic_light_wp_index - self.start_idx
+        if stop_index < 0:
+            stop_index += len(self.curr_waypoints)
+        rospy.loginfo("Traffic light index: %d Stop index: %d",
+                      self.traffic_light_wp_index,
+                      stop_index)
         if(self.state == WaypointUpdater.RUNNING):
-            # print("RUNNING")
-            if(self.valid_next_traffic and 
-                (self.next_traffic.state is TrafficLight.RED or 
-                    self.next_traffic.state is TrafficLight.YELLOW and self.traffic_light_wp_index>1.5*self.nb_stopping_wp)):
-                self.state = self.STOPPING
-                self.lane = self.breaking(self.lane, self.traffic_light_wp_index-self.nb_stopping_wp, self.cruise_velocity) # TRANSITION TO STOPPING
-            
+            if self.traffic_light_wp_index >= 0:
+                if stop_index < len(self.lane.waypoints):
+                    # Red light within lane
+                    # TRANSITION TO STOPPING
+                    self.state = self.STOPPING
+                    self.lane = self.braking(self.lane, stop_index, self.cruise_velocity)
         elif(self.state == WaypointUpdater.STOPPING):
-            # print("STOPPING")
-            if(self.valid_next_traffic and self.next_traffic.state is TrafficLight.GREEN):
+            if self.traffic_light_wp_index < 0 or stop_index >= len(self.lane.waypoints):
+                # Green/yellow light or next light past end of lane
+                # TRANSITION TO ACCELERATING
                 self.state = self.ACCELERATING
                 self.lane = self.keep_speed(self.lane, self.cruise_velocity)
             elif(self.commanded_velocity<0.5):
+                # TRANSITION TO STOPPED
                 self.state = self.STOPPED
-                self.lane = self.keep_speed(self.lane, 0)                   # TRANSITION TO STOPPED
+                self.lane = self.keep_speed(self.lane, 0)
         elif(self.state == WaypointUpdater.STOPPED):
-            # print("STOPPED")
-            if(self.next_traffic.state == TrafficLight.GREEN or self.valid_next_traffic is False):
+            if self.traffic_light_wp_index < 0 or stop_index >= len(self.lane.waypoints):
+                # Green/yellow light or next light last end of lane
+                # TRANSITION TO ACCELERATING
                 self.state = WaypointUpdater.ACCELERATING
-                self.lane = self.keep_speed(self.lane, self.cruise_velocity) # TRANSITION TO ACCELERATING
+                self.lane = self.keep_speed(self.lane, self.cruise_velocity)
         elif(self.state == WaypointUpdater.ACCELERATING):
-            # print("ACCELERATING")
             if(self.commanded_velocity>self.cruise_velocity-0.5):
+                # At speed
+                # TRANSITION TO RUNNING
                 self.state = self.RUNNING
-                self.lane = self.keep_speed(self.lane, self.cruise_velocity) # TRANSITION TO RUNNING
-
+                self.lane = self.keep_speed(self.lane, self.cruise_velocity) 
+        rospy.loginfo("State is %s", self.get_state_string())
 
     def keep_last(self, base_lane, last_lane):
 
@@ -242,9 +240,10 @@ class WaypointUpdater(object):
 
         return base_lane
 
-    def breaking(self, base_lane, stop_index, curr_vel):
+    def braking(self, base_lane, stop_index, curr_vel):
+        rospy.loginfo("Stopping at waypoint %d. (Current velocity=%f)", stop_index, curr_vel)
         for i in range(stop_index+1):
-            wp_distance = distance(base_lane.waypoints, i, stop_index) - 4.0 # This is a hack for stop lines
+            wp_distance = distance(base_lane.waypoints, i, stop_index) - self.stopping_dist
             wp_distance = max(0, wp_distance)
             velocity = min(curr_vel, math.sqrt(2 * wp_distance * self.max_decel))
             set_waypoint_velocity(base_lane.waypoints, i, velocity)  
@@ -268,12 +267,9 @@ class WaypointUpdater(object):
 
         return [min_dist, min_index]
 
-
-
     def closest_index(self, traffic_light):
         """ Verifies if the traffic light is on the current lookahead path"""
 
-        # print(len(self.lane.waypoints))
         t_position = traffic_light.pose.pose.position
         wps = self.lane.waypoints
         for i in range(len(wps)):
@@ -281,49 +277,22 @@ class WaypointUpdater(object):
             dist = math.sqrt((t_position.x - wp_position.x)**2 + (t_position.y - wp_position.y)**2)
             if(dist < self.dist_threshold):
                 return i
-            
-        # print("traffic_light: ", traffic_light)
-        # print("min_dist: ", min_dist)
-
-        # if(min_dist < self.dist_threshold):
-        #     return True
 
         return -1
 
     def gt_traffic_cb(self, msg):
-        """Callback for the ground truth traffic_waypoint message."""
-        self.traffic_lights = msg
-        # self.valid_next_traffic = False
-        # for i in range(len(msg.lights)):
-        #     if(self.is_on_lookahead(msg.lights[i])):
-        #         self.next_traffic = msg.lights[i]
-        #         # print("next_traffic: ", self.next_traffic)
-        #         self.valid_next_traffic = True
-        #         break
-
-        # if(self.valid_next_traffic is False):
-        #     print("No Traffic Light in the lookahead path")            
-
+        """Callback for the ground truth traffic_lights message."""
+        self.traffic_lights = msg.lights
 
     def traffic_cb(self, msg):
         """Callback for the traffic_waypoint message."""
-        self.traffic_lights = TrafficLightArray()
-        self.traffic_lights.append(msg)
-        # TODO: Callback for /traffic_waypoint message. Implement
-        pass
-
-    def obstacle_cb(self, msg):
-        """Callback for the obstacle_waypoint message."""
-        # TODO: Callback for /obstacle_waypoint message. We will implement it later
-        pass
-
+        self.traffic_light_wp_index = msg.data
 
 if __name__ == '__main__':
     try:
         rospy.init_node('waypoint_updater')
         node = WaypointUpdater()
         while not rospy.is_shutdown():
-            # node.update_lane()
             rospy.spin()
     except rospy.ROSInterruptException:
         rospy.logerr('Could not start waypoint updater node.')
