@@ -94,9 +94,6 @@ class TLClassifier(object):
                           13: {'id': 13, 'name': u'traffic_light_red'},
                           14: {'id': 14, 'name': u'traffic_light_red'}}
 
-
-        # we trained the network with RGB images
-        #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image_np = np.array(image)
         # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
         image_np_expanded = np.expand_dims(image_np, axis=0)
