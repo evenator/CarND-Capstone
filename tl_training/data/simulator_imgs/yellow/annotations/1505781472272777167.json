@@ -1,0 +1,37 @@
+{
+  "filename" : "1505781472272777167.jpg",
+  "folder" : "yellowout",
+  "image_w_h" : [
+    800,
+    600
+  ],
+  "objects" : [
+    {
+      "label" : "yellow",
+      "x_y_w_h" : [
+        264,
+        526,
+        18,
+        41
+      ]
+    },
+    {
+      "label" : "yellow",
+      "x_y_w_h" : [
+        102,
+        522,
+        19,
+        41
+      ]
+    },
+    {
+      "label" : "yellow",
+      "x_y_w_h" : [
+        185,
+        526,
+        17,
+        39
+      ]
+    }
+  ]
+}

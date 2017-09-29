@@ -1,0 +1,1 @@
+{"folder": "red", "creator": "synthetic", "image_w_h": [800, 600], "objects": [{"x_y_w_h": [224, 491, 24, 51], "label": "red"}, {"x_y_w_h": [328, 493, 22, 53], "label": "red"}, {"x_y_w_h": [121, 488, 20, 48], "label": "red"}], "filename": "1505781475877457663.jpg"}
