@@ -55,7 +55,55 @@ It doesn't perform as well when the lights aren't clear, and are small:
 ![green](imgs/screenshots/tl4.png)
 ![red](imgs/screenshots/tl5.png)
 
+## Installation and Usage
 
- 
+### System Requirements
 
+- Nvidia GTX1080 or better (Nvidia Titan X should suffice)
+- At least 2 core CPU
+- At least 2 GB available RAM
+- Ubuntu 14.04 or 16.04
+- ROS Indigo or Kinetic
 
+### Native Installation
+
+* Follow these instructions to install ROS
+  * [ROS Kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu) if you have Ubuntu 16.04.
+  * [ROS Indigo](http://wiki.ros.org/indigo/Installation/Ubuntu) if you have Ubuntu 14.04.
+* [Dataspeed DBW](https://bitbucket.org/DataspeedInc/dbw_mkz_ros)
+  * Use this option to install the SDK on a workstation that already has ROS installed: [One Line SDK Install (binary)](https://bitbucket.org/DataspeedInc/dbw_mkz_ros/src/81e63fcc335d7b64139d7482017d6a97b405e250/ROS_SETUP.md?fileviewer=file-view-default)
+* Download the [Udacity Simulator](https://github.com/udacity/CarND-Capstone/releases/tag/v1.2).
+
+### Usage (Simulator)
+
+1. Install python dependencies
+```bash
+cd CarND-Capstone
+pip install -r requirements.txt
+```
+2. Make and run styx
+```bash
+cd ros
+catkin_make
+source devel/setup.sh
+roslaunch launch/styx.launch
+```
+3. Run the simulator
+
+### Usage (Real world testing)
+
+1. Download [training bag](https://drive.google.com/file/d/0B2_h37bMVw3iYkdJTlRSUlJIamM/view?usp=sharing) that was recorded on the Udacity self-driving car (a bag demonstraing the correct predictions in autonomous mode can be found [here](https://drive.google.com/open?id=0B2_h37bMVw3iT0ZEdlF4N01QbHc))
+2. Unzip the file
+```bash
+unzip traffic_light_bag_files.zip
+```
+3. Play the bag file
+```bash
+rosbag play -l traffic_light_bag_files/loop_with_traffic_light.bag
+```
+4. Launch the project in site mode
+```bash
+cd CarND-Capstone/ros
+roslaunch launch/site.launch
+```
+5. Confirm that traffic light detection works on real life images
