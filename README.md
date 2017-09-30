@@ -15,6 +15,8 @@ Alan Steremberg:	alan.steremberg@gmail.com
 
 ## About this Project
 
+![architecture](imgs/architecture.png)
+
 The capstone project is designed to pull together several concepts from the Udacity Self Driving Car Nanodegree program. We implemented these concepts as ROS nodes and integrated them into a ROS system that runs in the Udacity Styx simulator or on Udacity's self driving car, Carla. This project was super exciting to work on.
 
 This report is split into four sections:
@@ -23,8 +25,6 @@ This report is split into four sections:
 * Traffic Light Object Detection
 * Waypoint Following
 * Low Level Control
-
-![architecture](imgs/architecture.png)
 
 We tested our software on both the Udacity simulator and a ROS bag of images from Carla.  Two different Tensor Flow models were trained for the traffic light detector, and the ROS launch files contain the configuration to use the correct one for each scenario (simulation or real imagery).
 
