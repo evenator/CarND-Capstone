@@ -24,7 +24,7 @@ This report is split into four sections:
 * Waypoint Following
 * Low Level Control
 
-*Add architecture diagram*
+![architecture](imgs/architecture.png)
 
 We tested our software on both the Udacity simulator and a ROS bag of images from Carla.  Two different Tensor Flow models were trained for the traffic light detector, and the ROS launch files contain the configuration to use the correct one for each scenario (simulation or real imagery).
 
