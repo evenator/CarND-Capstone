@@ -127,7 +127,7 @@ The `twist_controller.Control` object uses a PID controller to determine the des
 
 The steering controller component of the `twist_controller.Control` object sets the steering to 0.0 (centered) if the linear velocity is less than 1.0 m/s. This is to avoid singularities in the steering calculation. When the velocity is greater than 1.0 m/s, the steering command is calculated according to the equation `steering = 0.8 * atan(wheel_base * ω / v) * steer_ratio`, where `ω` is the desired angular velocity and `v` is the desired linear velocity. That ratio, `ω/v` is the desired curvature. The resulting value `steering` is published to the Drive By Wire interface to steer the car.
 
-## Other Tools
+## Visualization Tools
 
 ![rviz](imgs/visualization.png)
 
