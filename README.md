@@ -54,7 +54,7 @@ We tested our software on both the Udacity simulator and a ROS bag of images fro
 cd CarND-Capstone
 pip install -r requirements.txt
 ```
-2. Make and run styx
+2. Make and run Styx
 ```bash
 cd ros
 catkin_make
@@ -65,7 +65,7 @@ roslaunch launch/styx.launch
 
 ### Usage (Real world testing)
 
-1. Download [training bag](https://drive.google.com/file/d/0B2_h37bMVw3iYkdJTlRSUlJIamM/view?usp=sharing) that was recorded on the Udacity self-driving car (a bag demonstraing the correct predictions in autonomous mode can be found [here](https://drive.google.com/open?id=0B2_h37bMVw3iT0ZEdlF4N01QbHc))
+1. Download [training bag](https://drive.google.com/file/d/0B2_h37bMVw3iYkdJTlRSUlJIamM/view?usp=sharing) that was recorded on the Udacity self-driving car (a bag demonstrating the correct predictions in autonomous mode can be found [here](https://drive.google.com/open?id=0B2_h37bMVw3iT0ZEdlF4N01QbHc))
 2. Unzip the file
 ```bash
 unzip traffic_light_bag_files.zip
@@ -83,11 +83,11 @@ roslaunch launch/site.launch
 
 ## Traffic Light Object Detection
 
-Before our first team meeting Nitin had started to read papers and try to implement SSD algorithms in tensorflow.  After our first team meeting Alan and Nitin decided to team up and tackle the problem together.  The decision was made to use the tensorflow object detection API to build and implement the models.  This cut down the implementation time to just a few minutes to create the configuration files.  Most of the work was spent trying different techniques, and writing scripts to import and export the data to the TFRecord format that tensorflow uses.  This code is in the tl_training directory.  
+Before our first team meeting Nitin had started to read papers and try to implement SSD algorithms in TensorFlow.  After our first team meeting Alan and Nitin decided to team up and tackle the problem together.  The decision was made to use the TensorFlow object detection API to build and implement the models.  This cut down the implementation time to just a few minutes to create the configuration files.  Most of the work was spent trying different techniques, and writing scripts to import and export the data to the TFRecord format that tensorflow uses.  This code is in the tl_training directory.  
 
-We had a few first failed attempts before we decided to follow the medium post by Anthony Sarkis.  Before following this, we attempted to train the network with the Udacity data set. Unfortunatley a lot of the traffic lights in this data set are really far away and small. When we trained on this, the reflection of the traffic lights on the hood of Carla would be detected  - but the main light would not.  
+We had a few first failed attempts before we decided to follow the medium post by Anthony Sarkis.  Before following this, we attempted to train the network with the Udacity data set. Unfortunately a lot of the traffic lights in this data set are really far away and small. When we trained on this, the reflection of the traffic lights on the hood of Carla would be detected  - but the main light would not.  
 
-Ed dumped a bunch of training data from the simulator, and separated it by color into three folders.  Alan hand edited 90 or so images using Mac LabelRect.  After building a tool to convert the images, and json from LabelRect to TFRectord. We trained a model using these 90 images, and then ran the rest of the 600 or so back through the inference. We forced the labels to the correct names - and outputed JSON that matched LabelRect.  We then used LabelRect to hand correct another batch of images. We repeated this until the model got pretty good.
+Ed dumped a bunch of training data from the simulator, and separated it by color into three folders.  Alan hand edited 90 or so images using Mac LabelRect.  After building a tool to convert the images, and JSON from LabelRect to TFRecord. We trained a model using these 90 images, and then ran the rest of the 600 or so back through the inference. We forced the labels to the correct names - and outputted JSON that matched LabelRect.  We then used LabelRect to hand correct another batch of images. We repeated this until the model got pretty good.
 
 When we deployed the traffic light detection onto the full stack, it didn't do terribly well.  We noticed Anthony Sarkis' post, and decided to download the Bosch data, and try his approach.  It took around 3 tried to get it working. We had problems with tensorflow complaining about NaN's, and some of the predictions didn't work that well.  After we got through that, we trained a reasonably good Bosch based model (transfer learning based on faster_rcnn_resnet101_coco_11_06_2017). We then used our Bosch trained model as the starting point for two more models, one with the simulator images, and one with images from Carla.     
 
@@ -113,8 +113,14 @@ It doesn't perform as well when the lights aren't clear, and are small:
 
 ## Waypoint Following
 
-*Fill this in*
+The `waypoint_updater` find the car's current position on the `Lane` published to `/base_waypoints`, selects the next 200 waypoints, and sets the speed for each of those waypoints based on the position of the next red light published to `/traffic_waypoint`. The shortened `Lane`, with speeds set for each waypoint, is published to `/final_waypoints`.
+
+*More detail*
 
 ## Low Level Control
 
-*Fill this in*
+The `dbw_node` in the `twist_controller` package takes in ROS `nav_msgs/Twist` messages from the Pure Pursuit Path Executor and outputs throttle, steering, and brake commands. The `dbw_node` is a ROS wrapper around a `twist_controller.Controller` object, which takes in the current twist (linear and angular velocity) and the desired twist (linear and angular velocity) and outputs throttle, brake, and sterring. The `dbw_node` then publishes these values to the Drive By Wire Interface (real or simulated).
+
+The `twist_controller.Control` object uses a PID controller to determine the desired acceleration at each control step. The acceleration is capped by minimum and maximum acceleration limits. If the desired acceleration is greater than 0, it is compared to the current acceleration, and this error is used as the input to a PID controller that outputs the throttle value. If the acceleration is less than 0, the throttle is forced to 0. If the desired acceleration `a` is less than 0, the desired brake torque `τ` is calculated based on the vehicle mass `m` and wheel radius `r` according to the equation `τ = -a * m * r`.  If the brake torque is less than the deadband value (in this case 100 N-m), then the brake output is 0. This deadband smooths out the vehicle's speed when the desired speed is constant by coasting to slow down instead of pulsing the brakes. The resulting brake and velocity values are published to the Drive By Wire Interface to control the car.
+
+The steering controller component of the `twist_controller.Control` object sets the steering to 0.0 (centered) if the linear velocity is less than 1.0 m/s. This is to avoid singularities in the steering calculation. When the velocity is greater than 1.0 m/s, the steering command is calculated according to the equation `steering = 0.8 * atan(wheel_base * ω / v) * steer_ratio`, where `ω` is the desired angular velocity and `v` is the desired linear velocity. That ratio, `ω/v` is the desired curvature. The resulting value `steering` is published to the Drive By Wire interface to steer the car.
