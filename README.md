@@ -113,9 +113,13 @@ It doesn't perform as well when the lights aren't clear, and are small:
 
 ## Waypoint Following
 
-The `waypoint_updater` find the car's current position on the `Lane` published to `/base_waypoints`, selects the next 200 waypoints, and sets the speed for each of those waypoints based on the position of the next red light published to `/traffic_waypoint`. The shortened `Lane`, with speeds set for each waypoint, is published to `/final_waypoints`.
+The `waypoint_updater` find the car's current position on the `Lane` published to `/base_waypoints` and selects the next 200 waypoints. This segment is the local lane. The `waypoint_updater` sets the speed for each of the waypoints in the local lane based on the position of the next red light published to `/traffic_waypoint`. The local lane with speeds set for each waypoint is published to `/final_waypoints`.
 
-*More detail*
+The `waypoint_updater` is architected as a simple state machine with four states: `RUNNING`, `STOPPING`, `STOPPED`, and `ACCELERATING`. It starts in the `ACCELERATING` state. The state transitions are described in the following figure:
+
+![waypoint_updater_states](imgs/waypoint_updater_states.png)
+
+On each update, the `waypoint_updater` calculates the local lane of final waypoints based on the car's current position. What happens next depends on the current state. In the `ACCELERATING` and `RUNNING` states, the velocity for the entire local lane is set to a constant speed (in this case, 10 miles per hour). In the `STOPPING` state, the velocities are set using a braking profile. The velocity `v` for each waypoint in the local lane is determined according to its distance along the lane `s` from the desired stopping point according to the kinematic equation `v = (2 * s * a)^0.5`, where `a` is a maximum deceleration rate, in this case 1.0 m/s/s. Because the stop lines are not in the same place as the actual traffic lights, the value of `s` is decreased by 4.0 meters. To prevent the car from continuing forward if it overshoots the stop point, negative distance is coerced to 0. To prevent the speeds in the braking profile from exceeding the cruising speed, the minimum of the braking speed and the cruising speed is used.
 
 ## Low Level Control
 
