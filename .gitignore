@@ -2,5 +2,7 @@
 
 build
 devel
+logs
 
 profile.tmp
+.catkin_tools

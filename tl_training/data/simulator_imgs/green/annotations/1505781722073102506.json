@@ -1,0 +1,37 @@
+{
+  "filename" : "1505781722073102506.jpg",
+  "folder" : "greenoutfaster_rcnn",
+  "image_w_h" : [
+    800,
+    600
+  ],
+  "objects" : [
+    {
+      "label" : "green",
+      "x_y_w_h" : [
+        653,
+        505,
+        24,
+        53
+      ]
+    },
+    {
+      "label" : "green",
+      "x_y_w_h" : [
+        555,
+        508,
+        24,
+        48
+      ]
+    },
+    {
+      "label" : "green",
+      "x_y_w_h" : [
+        456,
+        505,
+        23,
+        49
+      ]
+    }
+  ]
+}

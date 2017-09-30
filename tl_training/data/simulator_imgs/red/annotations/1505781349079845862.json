@@ -1,0 +1,28 @@
+{
+  "filename" : "1505781349079845862.jpg",
+  "folder" : "redoutfaster_rcnn",
+  "image_w_h" : [
+    800,
+    600
+  ],
+  "objects" : [
+    {
+      "label" : "red",
+      "x_y_w_h" : [
+        704,
+        72,
+        78,
+        196
+      ]
+    },
+    {
+      "label" : "red",
+      "x_y_w_h" : [
+        297,
+        55,
+        96,
+        208
+      ]
+    }
+  ]
+}
