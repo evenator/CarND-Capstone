@@ -19,12 +19,13 @@ Alan Steremberg:	alan.steremberg@gmail.com
 
 The capstone project is designed to pull together several concepts from the Udacity Self Driving Car Nanodegree program. We implemented these concepts as ROS nodes and integrated them into a ROS system that runs in the Udacity Styx simulator or on Udacity's self driving car, Carla. This project was super exciting to work on.
 
-This report is split into four sections:
+This report is split into five sections:
 
 * Installation of a working ROS Environment
 * Traffic Light Object Detection
 * Waypoint Following
 * Low Level Control
+* Visaulization Tools
 
 We tested our software on both the Udacity simulator and a ROS bag of images from Carla.  Two different Tensor Flow models were trained for the traffic light detector, and the ROS launch files contain the configuration to use the correct one for each scenario (simulation or real imagery).
 
@@ -46,6 +47,10 @@ We tested our software on both the Udacity simulator and a ROS bag of images fro
 * [Dataspeed DBW](https://bitbucket.org/DataspeedInc/dbw_mkz_ros)
   * Use this option to install the SDK on a workstation that already has ROS installed: [One Line SDK Install (binary)](https://bitbucket.org/DataspeedInc/dbw_mkz_ros/src/81e63fcc335d7b64139d7482017d6a97b405e250/ROS_SETUP.md?fileviewer=file-view-default)
 * Download the [Udacity Simulator](https://github.com/udacity/CarND-Capstone/releases/tag/v1.2).
+
+### Downloading the Model
+
+The traffic light detector requires a TensorFlow model trained with traffic light data. Our team trained one for the Udacity simulator and one for the real imagery from Carla. The .zip file submitted to Udacity for review contains both models, but if you're downloading this project from GitHub, you'll need to [download the models](https://drive.google.com/drive/folders/0B6rZJWJmNK10ZnRXRXpMd09JX1U?usp=sharing) separately from Google Drive and save them in `src/ros/tl_detector/`.
 
 ### Usage (Simulator)
 
