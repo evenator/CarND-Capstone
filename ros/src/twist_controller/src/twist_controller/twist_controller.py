@@ -40,15 +40,15 @@ class Controller(object):
         This function should be called at the rate given in the constructor.
         Returns a tuple of (throttle, brake, steering)
         """
-        brake = 0.
-        throttle = 0.
 
         vel_error = cmd_lin_vel - cur_lin_vel
-
         raw_acc = cur_lin_vel - self.last_cur_lin_vel
-        
         cur_acc = self.accel_filter.filt(raw_acc)
         self.last_cur_lin_vel = cur_lin_vel
+
+        if not dbw_enabled:
+            self.reset()
+            return (0, 0, 0)
 
         if delta_t != 0.0:
             steer_error = (cmd_ang_vel - cur_ang_vel)/delta_t
@@ -67,9 +67,6 @@ class Controller(object):
         elif cmd_acc < self.decel_limit:
             cmd_acc = self.decel_limit
 
-        if not dbw_enabled or cmd_lin_vel<0.5:
-            self.throttle_pid.reset()
-
         throttle_error = (cmd_acc - cur_acc)
 
         brake = -cmd_acc*self.vehicle_mass*self.wheel_radius
@@ -78,9 +75,13 @@ class Controller(object):
         if cmd_acc < 0:
             if brake < self.brake_deadband:
                 brake = 0.
-            self.throttle_pid.reset()
             throttle = 0.
         else:
             brake = 0.
 
         return throttle, brake, steering
+
+    def reset(self):
+        self.last_cur_lin_vel = 0
+        self.speed_pid.reset()
+        self.throttle_pid.reset()
