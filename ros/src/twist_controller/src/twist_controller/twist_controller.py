@@ -50,15 +50,7 @@ class Controller(object):
             self.reset()
             return (0, 0, 0)
 
-        if delta_t != 0.0:
-            steer_error = (cmd_ang_vel - cur_ang_vel)/delta_t
-        else:
-            steer_error = 0.0
-
-        if(abs(cmd_lin_vel)<1.):
-            steering = 0
-        else:
-            steering = 0.8*atan(self.wheel_base * cmd_ang_vel / cmd_lin_vel) * self.steer_ratio
+        steering = self.calculate_steering(cmd_ang_vel, cmd_lin_vel)
 
         cmd_acc = self.speed_pid.step(vel_error, delta_t)
 
@@ -80,6 +72,14 @@ class Controller(object):
             brake = 0.
 
         return throttle, brake, steering
+
+    def calculate_steering(self, cmd_ang_vel, cmd_lin_vel):
+        # TODO: This threshold can probably be closer to 0
+        if abs(cmd_lin_vel) < 1.0:
+            return 0.0
+        else:
+            # TODO: Remove the magic number here
+            return 0.8*atan(self.wheel_base * cmd_ang_vel / cmd_lin_vel) * self.steer_ratio
 
     def reset(self):
         self.last_cur_lin_vel = 0
