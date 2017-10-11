@@ -44,7 +44,7 @@ class DBWNode(object):
 
         Stores DBW enabled state for later use.
         """
-        self.dbw_enabled = dbw_enabled
+        self.dbw_enabled = dbw_enabled.data
 
     def __init__(self):
         """
