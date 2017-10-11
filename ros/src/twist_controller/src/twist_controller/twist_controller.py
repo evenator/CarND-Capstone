@@ -63,7 +63,10 @@ class Controller(object):
         self.cur_acc = self.accel_filter.filt(raw_acc)
         self.last_cur_lin_vel = cur_lin_vel
 
-        steer_error = (cmd_ang_vel - cur_ang_vel)/delta_t
+        if delta_t != 0.0:
+            steer_error = (cmd_ang_vel - cur_ang_vel)/delta_t
+        else:
+            steer_error = 0.0
 
         if(abs(cmd_lin_vel)<1.):
             steering = 0
