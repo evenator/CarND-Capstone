@@ -108,6 +108,7 @@ class Controller(object):
         return force * self.wheel_radius
 
     def reset(self):
-        self.last_cur_lin_vel = 0
+        self.last_cur_lin_vel = 0.0
+        self.last_cmd_vel = 0.0
         self.speed_pid.reset()
         self.throttle_pid.reset()
