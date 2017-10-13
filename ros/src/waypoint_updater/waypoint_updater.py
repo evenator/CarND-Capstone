@@ -164,9 +164,11 @@ class WaypointUpdater(object):
         self.traffic_light_wp_index = -1
         # Check if there is a traffic light on the lookahead path
         for light in self.traffic_lights:
+            if(light.state is not TrafficLight.RED):
+                continue
             index = self.closest_index(light)
             if index >= self.nb_stopping_wp-5:
-                self.traffic_light_wp_index = index
+                self.traffic_light_wp_index = index-self.nb_stopping_wp
                 return
 
     def step(self):
@@ -177,9 +179,13 @@ class WaypointUpdater(object):
             self.lane = self.keep_speed(self.lane, self.cruise_velocity)
             self.commanded_velocity = self.cruise_velocity
 
-        stop_index = self.traffic_light_wp_index - self.start_idx
-        if stop_index < 0:
-            stop_index += len(self.curr_waypoints)
+        if(self.use_ground_truth):
+            stop_index = self.traffic_light_wp_index
+        else:
+            stop_index = self.traffic_light_wp_index - self.start_idx
+            if stop_index < 0:
+                stop_index += len(self.curr_waypoints)
+        
         rospy.loginfo("Traffic light index: %d Stop index: %d",
                       self.traffic_light_wp_index,
                       stop_index)
