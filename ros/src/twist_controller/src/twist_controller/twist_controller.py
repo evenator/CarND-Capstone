@@ -61,7 +61,10 @@ class Controller(object):
 
         # Acceleration Measurement Calculation
         vel_error = cmd_lin_vel - cur_lin_vel
-        raw_acc = (cur_lin_vel - self.last_cur_lin_vel)/delta_t
+        if delta_t != 0.0:
+            raw_acc = (cur_lin_vel - self.last_cur_lin_vel)/delta_t
+        else:
+            raw_acc = 0
         cur_acc = self.accel_filter.filt(raw_acc)
         self.last_cur_lin_vel = cur_lin_vel
 
