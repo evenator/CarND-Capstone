@@ -79,7 +79,7 @@ class WaypointUpdater(object):
         self.lane = Lane()
         self.last_lane = Lane()
 
-        self.traffic_lights = None
+        self.traffic_lights = []
 
         self.state = WaypointUpdater.ACCELERATING
 
