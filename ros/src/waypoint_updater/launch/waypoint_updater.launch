@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
     <node pkg="waypoint_updater" type="waypoint_updater.py" name="waypoint_updater" output="screen">
-    	<param name="use_ground_truth" value="true" />
-    	<param name="nb_stopping_wp" value="30" />
+        <param name="use_ground_truth" value="false" />
+        <param name="nb_stopping_wp" value="30" />
     </node>
 </launch>
