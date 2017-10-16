@@ -44,7 +44,7 @@ class DBWNode(object):
 
         Stores DBW enabled state for later use.
         """
-        self.dbw_enabled = dbw_enabled
+        self.dbw_enabled = dbw_enabled.data
 
     def __init__(self):
         """
@@ -157,5 +157,9 @@ class DBWNode(object):
 
 if __name__ == '__main__':
     rospy.init_node('dbw_node')
-    dbw = DBWNode()
-    dbw.loop()
+    while True:
+        try:
+            dbw = DBWNode()
+            dbw.loop()
+        except rospy.exceptions.ROSTimeMovedBackwardsException:
+            pass

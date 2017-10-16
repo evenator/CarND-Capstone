@@ -1,6 +1,7 @@
 """Throttle, brake, and steering control."""
 from math import atan
-from rospy import loginfo
+from rospy import loginfo, Publisher
+from std_msgs.msg import Float32
 from .lowpass import LowPassFilter
 from .pid import PID
 
@@ -21,11 +22,8 @@ class Controller(object):
 
         Set up gains and initialize internal state; initialize PID controllers.
         """
-        self.i_error = 0
-        self.kp_vel = kp_vel
-        self.kp_throttle = kp_throttle
-        self.ki_throttle = ki_throttle
         self.last_cur_lin_vel = 0
+        self.last_cmd_vel = 0
         self.accel_limit = accel_limit
         self.decel_limit = decel_limit
         self.vehicle_mass = vehicle_mass
@@ -33,13 +31,13 @@ class Controller(object):
         self.brake_deadband = brake_deadband
         self.steer_ratio = steer_ratio
         self.wheel_base = wheel_base
-        self.cur_acc = 0
-        self.rate = rate
         self.speed_pid = PID(kp_vel, 0.0, 0.0, self.decel_limit, self.accel_limit)
-        self.accel_filter = LowPassFilter(0.2, 1./self.rate)
-        # self.steer_pid = PID(0.5, 0.001, 0.0)
+        self.accel_filter = LowPassFilter(0.2, 1./rate)
         self.throttle_pid = PID(kp_throttle, ki_throttle, 0.0, 0, 1.)
-        self.last_cur_lin_vel = 0
+
+        self.debug_cmd_a = Publisher('~debug_cmd_acc', Float32, queue_size=2)
+        self.debug_cmd_vel = Publisher('~debug_cmd_vel', Float32, queue_size=2)
+        self.debug_cur_a = Publisher('~debug_cur_acc', Float32, queue_size=2)
 
     def control(self, cmd_lin_vel, cmd_ang_vel, cur_lin_vel, cur_ang_vel, delta_t, dbw_enabled):
         """
@@ -48,58 +46,69 @@ class Controller(object):
         This function should be called at the rate given in the constructor.
         Returns a tuple of (throttle, brake, steering)
         """
-        brake = 0.
-        throttle = 0.
+        # Steering
+        if abs(cmd_lin_vel) > 0.1:
+            curvature = cmd_ang_vel / cmd_lin_vel
+        else:
+            curvature = cmd_ang_vel / 0.1
+        steering = self.calculate_steering(curvature)
 
-        # loginfo("cmd_ang_vel: %f", cmd_ang_vel)
-        # loginfo("cmd_lin_vel: %f", cmd_lin_vel)
-        
-        
+        # Acceleration limiting (velocity ramp)
+        min_vel = self.last_cmd_vel + self.decel_limit * delta_t
+        max_vel = self.last_cmd_vel + self.accel_limit * delta_t
+        cmd_lin_vel = max(min_vel, min(cmd_lin_vel, max_vel))
+        self.last_cmd_vel = cmd_lin_vel
+
+        # Acceleration Measurement Calculation
         vel_error = cmd_lin_vel - cur_lin_vel
-
-        raw_acc = cur_lin_vel - self.last_cur_lin_vel
-        
-        # self.cur_acc = (cur_lin_vel - self.last_cur_lin_vel)*0.5 / delta_t + self.cur_acc*0.5
-        self.cur_acc = self.accel_filter.filt(raw_acc)
+        if delta_t != 0.0:
+            raw_acc = (cur_lin_vel - self.last_cur_lin_vel)/delta_t
+        else:
+            raw_acc = 0
+        cur_acc = self.accel_filter.filt(raw_acc)
         self.last_cur_lin_vel = cur_lin_vel
 
-        steer_error = (cmd_ang_vel - cur_ang_vel)/delta_t
+        # If DBW not enabled, reset and return
+        if not dbw_enabled:
+            self.reset()
+            return (0, 0, 0)
 
-        if(abs(cmd_lin_vel)<1.):
-            steering = 0
-        else:
-            steering = 0.8*atan(self.wheel_base * cmd_ang_vel / cmd_lin_vel) * self.steer_ratio
-
-        # loginfo("steering: %f ", steering)
+        # Speed PID to get commanded acceleration
         cmd_acc = self.speed_pid.step(vel_error, delta_t)
-        # cmd_acc = self.kp_vel * (cmd_lin_vel - cur_lin_vel) /delta_t
 
-        if cmd_acc > self.accel_limit:
-            cmd_acc = self.accel_limit
-        elif cmd_acc < self.decel_limit:
-            cmd_acc = self.decel_limit
+        # Acceleration limiting (commanded acceleration)
+        cmd_acc = max(self.decel_limit, min(cmd_acc, self.accel_limit))
 
-        # loginfo("cmd_acc: %f", cmd_acc)
-        # loginfo("cur_acc: %f", self.cur_acc)
-
-        if not dbw_enabled or cmd_lin_vel<0.5:
-            # self.steer_pid.reset()
-            self.throttle_pid.reset()
-
-        throttle_error = (cmd_acc - self.cur_acc)
-
-        brake = -cmd_acc*self.vehicle_mass*self.wheel_radius
+        # Throttle and brake calculations
+        throttle_error = cmd_acc - cur_acc
         throttle = self.throttle_pid.step(throttle_error, delta_t)
+        brake = self.calculate_brake(cmd_acc)
 
         if cmd_acc < 0:
             if brake < self.brake_deadband:
                 brake = 0.
-            self.throttle_pid.reset()
             throttle = 0.
         else:
             brake = 0.
 
-       
-        # loginfo("throttle: %f", throttle)
-
+        self.debug_cmd_vel.publish(Float32(data=cmd_lin_vel))
+        self.debug_cmd_a.publish(Float32(data=cmd_acc))
+        self.debug_cur_a.publish(Float32(data=cur_acc))
         return throttle, brake, steering
+
+    def calculate_steering(self, curvature):
+        # TODO: Remove this magic number
+        return 0.8*atan(self.wheel_base * curvature) * self.steer_ratio
+
+    def calculate_brake(self, cmd_acc):
+        '''
+        Calculate brake torque to achieve desired deceleration
+        '''
+        force = -cmd_acc * self.vehicle_mass
+        return force * self.wheel_radius
+
+    def reset(self):
+        self.last_cur_lin_vel = 0.0
+        self.last_cmd_vel = 0.0
+        self.speed_pid.reset()
+        self.throttle_pid.reset()
